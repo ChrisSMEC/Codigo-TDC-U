@@ -1,0 +1,73 @@
+%   Datos
+L = 1;                              %Longitud pared [m]
+k = 200;                            %Conductividad térmica
+h = 9;                              %Coeficiente convectivo
+%qv = 1;                            %Generación interna de calor
+T1=37;                              %Temperatura pared 1
+T2=25;                              %Temperatura pared 2
+
+k_E= k
+k_W= k
+
+y=0:4                               %Para darle espesor al grafico
+
+%   Discretización
+n=5;                               %Número de nodos
+dx=L/(n);                           %Distancia entre nodos
+
+x=zeros(1,n);                       %Distancias de nodos
+for i=2:n
+    x(i)=x(i)+i*dx;
+    i=i+1;
+end
+
+%   Condiciones de frontera
+Ti=10;                              %Temperatura inicial
+T=Ti*ones(5,n);
+T(1:5,1)=T1;
+T(1:5,n)=T2;
+
+ae=zeros(1,n);
+ae(1,1:n-1) = k_E/dx
+ae(1,n) = 0.0
+
+aw = zeros(1,n);
+aw(1,1:n-1) = k_W/dx
+aw(1,n) = k_W/dx
+
+ap =zeros(1,n);
+ap = ae + aw
+ap(1,n) = ae(n) + aw(n) + h
+
+qv = 64*T(1,n-1)*dx
+bp = zeros(1,n)
+bp(1,1:n) = qv
+b(1,1) = 37
+bp(1,n) = bp(1,n)*(dx/2)+h*T2
+
+%   MN
+err=1;
+tol=0.0000001;
+iter=0;
+
+while err>tol
+    for i= 2:(n-1)
+        T(1:5,i) = (ae/ap)*T(1:5,i+1) + (aw/ap)*T(1:5,i-1) + (bp/ap);
+        iter=iter+1;
+    end
+    T_ant=T;
+    err=abs(max(T-T_ant));    
+    fprintf('Nodo: %d   Temperatura: %d',n,T)
+end
+
+%   Graficos
+contourf(x,y,T,'ShowText','on')
+xlabel('Largo [m]')
+ylabel('Espesor infinito')
+title(sprintf('Conducción unidimensional \n Iteración %d',iter))
+colorbar
+
+plot(x,T)
+xlabel('Largo [m]')
+ylabel('Temperatura [K]')
+title('Conducción térmica')
